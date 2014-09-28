@@ -187,6 +187,42 @@ function whenSoundKeys(listener) {
   };
 }
 
+const BPMControls = React.createClass({
+  displayName: "BPMControls",
+
+  render: function () {
+    return hbox(
+      {
+        className: "bpm"
+      },
+      dom.label(
+        null,
+        "BPM: " + this.props.bpm
+      ),
+      dom.input({
+        ref: "range",
+        type: "range",
+        min: 50,
+        max: 150,
+        value: this.props.bpm,
+        style: {
+          flex: 1
+        },
+
+        onChange: this._update,
+        onInput: this._update,
+        onKeyDown: this._update,
+        onMouseDown: this._update,
+        onMouseMove: this._update
+      })
+    );
+  },
+
+  _update: function (e) {
+    this.props.setBPM(this.refs.range.getDOMNode().value);
+  }
+});
+
 const Thang = React.createClass({
   displayName: "Thang",
 
@@ -264,6 +300,10 @@ const Thang = React.createClass({
         onKeyDown: this._onKeyDown,
         onKeyUp: this._onKeyUp
       },
+      BPMControls({
+        bpm: this.props.bpm,
+        setBPM: this._setBPM
+      }),
       hbox(
         null,
         dom.div({
@@ -293,6 +333,10 @@ const Thang = React.createClass({
         // dom.pre(null, JSON.stringify(this.props, null, 2))
       )
     );
+  },
+
+  _setBPM: function (bpm) {
+    this.setProps({ bpm });
   },
 
   _getKeySoundType: function (key) {
