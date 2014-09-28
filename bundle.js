@@ -172,6 +172,22 @@ const SoundsHeader = React.createClass({
   }
 });
 
+function whenSoundKeys(listener) {
+  return function (e) {
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) {
+      return;
+    }
+
+    const res = this._getKeySoundType(e.key.toUpperCase());
+    if (!res) {
+      return;
+    }
+
+    e.preventDefault();
+    return listener.call(this, res);
+  };
+}
+
 const Thang = React.createClass({
   displayName: "Thang",
 
@@ -293,33 +309,13 @@ const Thang = React.createClass({
     return null;
   },
 
-  _onKeyDown: function (e) {
-    if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) {
-      return;
-    }
+  _onKeyDown: whenSoundKeys(function ({ sound, noteTypeIndex }) {
+    this._scheduleSound(sound, noteTypeIndex);
+  }),
 
-    const res = this._getKeySoundType(e.key.toUpperCase());
-    if (!res) {
-      return;
-    }
-
-    e.preventDefault();
-    this._scheduleSound(res.sound, res.noteTypeIndex);
-  },
-
-  _onKeyUp: function (e) {
-    if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) {
-      return;
-    }
-
-    const res = this._getKeySoundType(e.key.toUpperCase());
-    if (!res) {
-      return;
-    }
-
-    e.preventDefault();
-    this._unscheduleSound(res.sound, res.noteTypeIndex);
-  },
+  _onKeyUp: whenSoundKeys(function ({ sound, noteTypeIndex }) {
+    this._unscheduleSound(sound, noteTypeIndex);
+  }),
 
   _scheduleSound: function (sound, noteTypeIndex) {
     this.setProps({
