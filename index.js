@@ -306,6 +306,21 @@ const Thang = React.createClass({
     loop(this);
   },
 
+  shouldComponentUpdate: function (nextProps) {
+    if (this.props.noteIndex !== nextProps.noteIndex
+        || this.props.bpm !== nextProps.bpm) {
+      return true;
+    }
+
+    for (let i = 0; i < this.props.noteTypes.length; i++) {
+      if (this.props.noteTypes[i].scheduled !== nextProps.noteTypes[i].scheduled) {
+        return true;
+      }
+    }
+
+    return false;
+  },
+
   render: function () {
     return vbox(
       {
@@ -428,7 +443,7 @@ function loop(component) {
 
   const scheduleNextFrame = () => {
     lastRAFTime = now;
-    requestAnimationFrame(() => loop(component));
+    setTimeout(loop, 1, component);
   };
 
   const interval = getShortestInterval(component.props.bpm);
