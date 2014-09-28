@@ -230,32 +230,42 @@ const Thang = React.createClass({
   getDefaultProps: () => ({
     sounds: [
       {
-        name: "Kick",
+        name: "Kick 1",
+        url: "",
+        keys: ["2", "W", "S", "X"]
+      },
+      {
+        name: "Kick 2",
+        url: "",
+        keys: ["3", "E", "D", "C"]
+      },
+      {
+        name: "Snare 1",
         url: "",
         keys: ["4", "R", "F", "V"]
       },
       {
-        name: "Snare",
+        name: "Snare 2",
         url: "",
         keys: ["5", "T", "G", "B"]
       },
       {
-        name: "Hi Hat",
+        name: "Closed Hi Hat",
         url: "",
         keys: ["6", "Y", "H", "N"]
       },
       {
-        name: "Tom 1",
+        name: "Open Hi Hat",
         url: "",
         keys: ["7", "U", "J", "M"]
       },
       {
-        name: "Tom 2",
+        name: "Tom 1",
         url: "",
         keys: ["8", "I", "K", ","]
       },
       {
-        name: "Tom 3",
+        name: "Tom 2",
         url: "",
         keys: ["9", "O", "L", "."]
       },
@@ -263,22 +273,22 @@ const Thang = React.createClass({
 
     noteTypes: [
       {
-        name: "1/4",
+        name: "1/2",
         mod: 8,
         scheduled: []
       },
       {
-        name: "1/8",
+        name: "1/4",
         mod: 4,
         scheduled: []
       },
       {
-        name: "1/16",
+        name: "1/8",
         mod: 2,
         scheduled: []
       },
       {
-        name: "1/32",
+        name: "1/16",
         mod: 1,
         scheduled: []
       },
@@ -390,16 +400,16 @@ const Thang = React.createClass({
 
 // App Logic -------------------------------------------------------------------
 
-// Return number of ms for a 1/32nd note.
-function getInterval(bpm) {
-  return 60000 / bpm / 8;
+// Return number of ms for a 1/16th note.
+function getShortestInterval(bpm) {
+  return 60000 / bpm / 4;
 }
 
 // Main program loop.
 function loop(component) {
   const schedule = () => requestAnimationFrame(() => loop(component));
 
-  const interval = getInterval(component.props.bpm);
+  const interval = getShortestInterval(component.props.bpm);
   let notesHappened = 0;
   let lastTime = component.props.lastNoteTime;
   const now = Date.now();
