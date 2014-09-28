@@ -1,3 +1,5 @@
+"use strict";
+
 const React = require("react");
 const { DOM: dom } = React;
 
@@ -293,6 +295,7 @@ const Thang = React.createClass({
       },
     ],
 
+    latency: 0,
     bpm: 100,
     noteIndex: 0,
     lastNoteTime: Date.now()
@@ -310,6 +313,19 @@ const Thang = React.createClass({
         onKeyDown: this._onKeyDown,
         onKeyUp: this._onKeyUp
       },
+      dom.div(
+        {
+          style: {
+            position: "absolute",
+            top: 0,
+            right: 0,
+            fontWeight: "normal",
+            backgroundColor: "rgba(255,255,255,.75)",
+            padding: ".25em"
+          }
+        },
+        "Latency: " + this.props.latency + "ms"
+      ),
       BPMControls({
         bpm: this.props.bpm,
         setBPM: this._setBPM
@@ -404,22 +420,24 @@ function getShortestInterval(bpm) {
   return 60000 / bpm / 4;
 }
 
+let lastRAFTime = Date.now();
+
 // Main program loop.
 function loop(component) {
-  const schedule = () => requestAnimationFrame(() => loop(component));
-
-  const interval = getShortestInterval(component.props.bpm);
-  let notesHappened = 0;
-  let lastTime = component.props.lastNoteTime;
   const now = Date.now();
 
-  while (lastTime + interval < now) {
-    notesHappened++;
-    lastTime += interval;
-  }
+  const scheduleNextFrame = () => {
+    lastRAFTime = now;
+    requestAnimationFrame(() => loop(component));
+  };
+
+  const interval = getShortestInterval(component.props.bpm);
+  const lastTime = component.props.lastNoteTime;
+  const elapsed = now - lastTime;
+  const notesHappened = (elapsed / interval) | 0;
 
   if (!notesHappened) {
-    return void schedule();
+    return void scheduleNextFrame();
   }
 
   const currentNote = (component.props.noteIndex + notesHappened) % 8;
@@ -427,10 +445,11 @@ function loop(component) {
   // TODO FITZGEN: play current note's scheduled sounds here.
 
   component.setProps({
+    latency: now - lastRAFTime,
     noteIndex: currentNote,
-    lastNoteTime: lastTime
+    lastNoteTime: lastTime + interval * notesHappened
   });
-  schedule();
+  scheduleNextFrame();
 }
 
 // App Initialization ----------------------------------------------------------

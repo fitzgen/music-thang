@@ -1,4 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+"use strict";
+
 const React = require("react");
 const { DOM: dom } = React;
 
@@ -294,6 +296,7 @@ const Thang = React.createClass({
       },
     ],
 
+    latency: 0,
     bpm: 100,
     noteIndex: 0,
     lastNoteTime: Date.now()
@@ -311,6 +314,19 @@ const Thang = React.createClass({
         onKeyDown: this._onKeyDown,
         onKeyUp: this._onKeyUp
       },
+      dom.div(
+        {
+          style: {
+            position: "absolute",
+            top: 0,
+            right: 0,
+            fontWeight: "normal",
+            backgroundColor: "rgba(255,255,255,.75)",
+            padding: ".25em"
+          }
+        },
+        "Latency: " + this.props.latency + "ms"
+      ),
       BPMControls({
         bpm: this.props.bpm,
         setBPM: this._setBPM
@@ -405,22 +421,24 @@ function getShortestInterval(bpm) {
   return 60000 / bpm / 4;
 }
 
+let lastRAFTime = Date.now();
+
 // Main program loop.
 function loop(component) {
-  const schedule = () => requestAnimationFrame(() => loop(component));
-
-  const interval = getShortestInterval(component.props.bpm);
-  let notesHappened = 0;
-  let lastTime = component.props.lastNoteTime;
   const now = Date.now();
 
-  while (lastTime + interval < now) {
-    notesHappened++;
-    lastTime += interval;
-  }
+  const scheduleNextFrame = () => {
+    lastRAFTime = now;
+    requestAnimationFrame(() => loop(component));
+  };
+
+  const interval = getShortestInterval(component.props.bpm);
+  const lastTime = component.props.lastNoteTime;
+  const elapsed = now - lastTime;
+  const notesHappened = (elapsed / interval) | 0;
 
   if (!notesHappened) {
-    return void schedule();
+    return void scheduleNextFrame();
   }
 
   const currentNote = (component.props.noteIndex + notesHappened) % 8;
@@ -428,10 +446,11 @@ function loop(component) {
   // TODO FITZGEN: play current note's scheduled sounds here.
 
   component.setProps({
+    latency: now - lastRAFTime,
     noteIndex: currentNote,
-    lastNoteTime: lastTime
+    lastNoteTime: lastTime + interval * notesHappened
   });
-  schedule();
+  scheduleNextFrame();
 }
 
 // App Initialization ----------------------------------------------------------
