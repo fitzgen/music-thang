@@ -293,19 +293,29 @@ const Thang = React.createClass({
   },
 
   _onKeyDown: function (e) {
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) {
+      return;
+    }
+
     const res = this._getKeySoundType(e.key.toUpperCase());
     if (!res) {
       return;
     }
+
     e.preventDefault();
     this._scheduleSound(res.sound, res.noteTypeIndex);
   },
 
   _onKeyUp: function (e) {
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) {
+      return;
+    }
+
     const res = this._getKeySoundType(e.key.toUpperCase());
     if (!res) {
       return;
     }
+
     e.preventDefault();
     this._unscheduleSound(res.sound, res.noteTypeIndex);
   },
