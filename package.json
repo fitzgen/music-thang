@@ -1,0 +1,16 @@
+{
+  "name": "music-thang",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "./node_modules/.bin/browserify -o bundle.js index.js"
+  },
+  "author": "",
+  "license": "BSD",
+  "dependencies": {
+    "react": "0.11.X",
+    "browserify": "5.12.X"
+  }
+}
