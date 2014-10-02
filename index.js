@@ -3,6 +3,12 @@
 const React = require("react");
 const { DOM: dom } = React;
 
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+
+Array.prototype.contains = function (el) {
+  return this.indexOf(el) !== -1;
+};
+
 // React Components ------------------------------------------------------------
 
 const makeFlexBoxClass = direction => React.createClass({
@@ -232,42 +238,42 @@ const Thang = React.createClass({
     sounds: [
       {
         name: "Kick 1",
-        url: "",
+        url: "sounds/kick-1.ogg",
         keys: ["2", "W", "S", "X"]
       },
       {
         name: "Kick 2",
-        url: "",
+        url: "sounds/kick-2.ogg",
         keys: ["3", "E", "D", "C"]
       },
       {
         name: "Snare 1",
-        url: "",
+        url: "sounds/snare-1.ogg",
         keys: ["4", "R", "F", "V"]
       },
       {
         name: "Snare 2",
-        url: "",
+        url: "sounds/snare-2.ogg",
         keys: ["5", "T", "G", "B"]
       },
       {
         name: "Closed Hi Hat",
-        url: "",
+        url: "sounds/closed-hi-hat.ogg",
         keys: ["6", "Y", "H", "N"]
       },
       {
         name: "Open Hi Hat",
-        url: "",
+        url: "sounds/open-hi-hat.ogg",
         keys: ["7", "U", "J", "M"]
       },
       {
         name: "Tom 1",
-        url: "",
+        url: "sounds/tom-1.ogg",
         keys: ["8", "I", "K", ","]
       },
       {
         name: "Tom 2",
-        url: "",
+        url: "sounds/tom-2.ogg",
         keys: ["9", "O", "L", "."]
       },
     ],
@@ -302,8 +308,12 @@ const Thang = React.createClass({
   }),
 
   componentDidMount: function () {
+    // Focus so keyboard input works off the bat.
     this.getDOMNode().querySelector("button").focus();
-    loop(this);
+
+    const context = new AudioContext();
+    loadBuffers(this, context);
+    loop(this, context);
   },
 
   shouldComponentUpdate: function (nextProps) {
@@ -408,7 +418,7 @@ const Thang = React.createClass({
           return nt;
         }
 
-        nt.scheduled = nt.scheduled.concat([sound.name]);
+        nt.scheduled = nt.scheduled.filter(n => n !== sound.name).concat([sound.name]);
         return nt;
       })
     });
@@ -430,20 +440,56 @@ const Thang = React.createClass({
 
 // App Logic -------------------------------------------------------------------
 
-// Return number of ms for a 1/16th note.
-function getShortestInterval(bpm) {
-  return 60000 / bpm / 4;
+function loadBuffers(component, context) {
+  for (let s of component.props.sounds) {
+    let sound = s; // Temporary work around SpiderMonkey bug.
+    let xhr = new XMLHttpRequest();
+    xhr.open("GET", sound.url, true);
+    xhr.responseType = "arraybuffer";
+
+    const errorHandler = prefix => error => {
+      console.exception(prefix, error);
+    };
+
+    xhr.onload = () => {
+      context.decodeAudioData(
+        xhr.response,
+        buffer => sound.buffer = buffer,
+        errorHandler("Error decoding audio data")
+      );
+    };
+
+    xhr.onerror = errorHandler("Error fetching sound file");
+
+    xhr.send();
+  }
 }
 
-let lastRAFTime = Date.now();
+// Return number of ms for a 1/16th note.
+function getShortestInterval(bpm) {
+  return 60   // seconds per minute
+       * 1000 // milliseconds per second
+       / bpm  // quarter notes per minute
+       / 4;   // sixteenth notes per quarter note
+}
+
+// Play the given sound buffer.
+function playSound(context, buffer) {
+  const source = context.createBufferSource();
+  source.buffer = buffer;
+  source.connect(context.destination);
+  source.start();
+}
+
+let lastLoopTime = Date.now();
 
 // Main program loop.
-function loop(component) {
+function loop(component, context) {
   const now = Date.now();
 
-  const scheduleNextFrame = () => {
-    lastRAFTime = now;
-    setTimeout(loop, 1, component);
+  const scheduleNextLoop = () => {
+    lastLoopTime = now;
+    setTimeout(loop, 1, component, context);
   };
 
   const interval = getShortestInterval(component.props.bpm);
@@ -452,19 +498,28 @@ function loop(component) {
   const notesHappened = (elapsed / interval) | 0;
 
   if (!notesHappened) {
-    return void scheduleNextFrame();
+    return void scheduleNextLoop();
   }
 
-  const currentNote = (component.props.noteIndex + notesHappened) % 8;
+  const currentNoteIndex = (component.props.noteIndex + notesHappened) % 8;
 
-  // TODO FITZGEN: play current note's scheduled sounds here.
+  for (let noteType of component.props.noteTypes) {
+    if (currentNoteIndex % noteType.mod !== 0) {
+      continue;
+    }
+
+    for (let name of noteType.scheduled) {
+      let sound = component.props.sounds.find(s => s.name === name);
+      playSound(context, sound.buffer);
+    }
+  }
 
   component.setProps({
-    latency: now - lastRAFTime,
-    noteIndex: currentNote,
+    latency: now - lastLoopTime,
+    noteIndex: currentNoteIndex,
     lastNoteTime: lastTime + interval * notesHappened
   });
-  scheduleNextFrame();
+  scheduleNextLoop();
 }
 
 // App Initialization ----------------------------------------------------------
