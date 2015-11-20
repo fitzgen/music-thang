@@ -380,8 +380,6 @@ const Thang = React.createClass({
           scheduleSound: this._scheduleSound,
           unscheduleSound: this._unscheduleSound
         })
-        // ,
-        // dom.pre(null, JSON.stringify(this.props, null, 2))
       )
     );
   },
