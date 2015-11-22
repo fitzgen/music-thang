@@ -5,12 +5,14 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "./node_modules/.bin/browserify -o bundle.js index.js"
+    "build": "./node_modules/.bin/webpack"
   },
   "author": "",
   "license": "BSD",
   "dependencies": {
-    "react": "0.11.X",
-    "browserify": "5.12.X"
+    "babel-loader": "^6.2.0",
+    "babel-preset-es2015": "^6.1.18",
+    "babel-preset-react": "^6.1.18",
+    "react": "0.11.X"
   }
 }
